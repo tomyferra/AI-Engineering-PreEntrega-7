@@ -1,0 +1,64 @@
+# Stack completo: Redis Stack (estado + checkpoints + cola) · Phoenix (trazas) · API · worker.
+#
+#   docker compose up -d redis phoenix          # solo infraestructura (API y worker corren local con uvicorn)
+#   docker compose up -d --build                # todo en contenedores
+#
+# Phoenix UI: http://localhost:6006 · API: http://localhost:8000/docs · RedisInsight no incluido.
+services:
+  redis:
+    # Redis Stack: el checkpointer de LangGraph (RedisSaver) necesita los módulos RedisJSON y RediSearch.
+    image: redis/redis-stack-server:7.4.0-v6
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    environment:
+      REDIS_ARGS: "--appendonly yes"   # AOF: los jobs y checkpoints sobreviven a un reinicio
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  phoenix:
+    image: arizephoenix/phoenix:version-20.19.0
+    ports:
+      - "6006:6006"   # UI + colector OTLP/HTTP (/v1/traces)
+      - "4317:4317"   # colector OTLP/gRPC
+    volumes:
+      - phoenix-data:/mnt/data
+    environment:
+      PHOENIX_WORKING_DIR: /mnt/data
+
+  api:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
+      RUN_WORKER_IN_API: "false"       # la API solo encola y consulta; el grafo corre en el servicio worker
+    depends_on:
+      redis:
+        condition: service_healthy
+      phoenix:
+        condition: service_started
+
+  worker:
+    build: .
+    command: python -m app.worker
+    env_file: .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
+    depends_on:
+      redis:
+        condition: service_healthy
+      phoenix:
+        condition: service_started
+
+volumes:
+  redis-data:
+  phoenix-data:

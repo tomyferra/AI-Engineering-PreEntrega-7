@@ -1,0 +1,30 @@
+python-dotenv==1.2.4
+pydantic==2.13.5
+
+# Orquestador multi-agente (LangGraph + agentes ReAct de LangChain) - heredado de la Pre-entrega 6
+langgraph==1.2.14
+langchain==1.4.3
+langchain-core==1.6.7
+langchain-openai==1.6.7
+langchain-anthropic==1.7.5
+langchain-google-genai==4.4.0
+langchain-tavily==0.2.18
+rank-bm25==0.2.2
+
+# API asíncrona
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+httpx==0.28.1
+
+# Estado en Redis: jobs + cola (redis.asyncio) y checkpoints de LangGraph (AsyncRedisSaver)
+redis==8.1.0
+langgraph-checkpoint-redis==0.5.2
+
+# Observabilidad: Arize Phoenix vía OpenTelemetry + OpenInference
+arize-phoenix-otel==0.17.2
+openinference-instrumentation-langchain==0.1.78
+
+# Tests (sin API keys ni Redis real)
+pytest==9.1.1
+pytest-asyncio==1.4.0
+fakeredis==2.39.0

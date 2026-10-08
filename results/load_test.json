@@ -1,0 +1,117 @@
+{
+  "summary": {
+    "requests": 5,
+    "done": 5,
+    "failed": 0,
+    "wall_clock_s": 204.34,
+    "post_latency_ms_max": 47.9,
+    "latency_p50_s": 187.36,
+    "latency_p95_s": 203.34
+  },
+  "results": [
+    {
+      "index": 1,
+      "job_id": "6dcf393ba1aa45f9a25de4f3c499f819",
+      "status": "DONE",
+      "critical": false,
+      "accepted_ms": 47.9,
+      "total_s": 187.36,
+      "processing_s": 187.36,
+      "flow": [
+        "investigador",
+        "analista",
+        "sintetizador"
+      ],
+      "action_result": null,
+      "error": null,
+      "query": "¿Cuáles fueron los ingresos netos de cada trimestre de 2026 (Q1 a Q3)? Calculá el crecimiento porcentual entre trimestres consecutivos.",
+      "final_answer": "Los ingresos netos reales de GenPet en 2026 crecieron un 79,14% de Q1 a Q2, y un 81,58% de Q2 a Q3.\n\n* Ingresos netos Q1 2026: $4.427.580\n* Ingresos netos Q2 2026: $7.931.680\n* Ingresos netos Q3 2026: $14.402.182\n* Crecimiento porcentual Q1 a Q2: 79,14%\n* Crecimiento porcentual Q2 a Q3: 81,58%\n\nFuentes: historial_ventas_2026.md"
+    },
+    {
+      "index": 2,
+      "job_id": "de62c7629ef749af92c25ffba6c07927",
+      "status": "DONE",
+      "critical": false,
+      "accepted_ms": 9.1,
+      "total_s": 183.15,
+      "processing_s": 183.15,
+      "flow": [
+        "investigador",
+        "analista",
+        "sintetizador"
+      ],
+      "action_result": null,
+      "error": null,
+      "query": "¿Qué canal de ventas concentra más ingresos en lo que va de 2026 y qué porcentaje del total representa?",
+      "final_answer": "El canal de ventas que concentra más ingresos en lo que va de 2026 es el canal mayorista, representando el 84,62% del total.\n\n* Ingresos netos acumulados (enero-septiembre 2026): $26.761.442\n* Ingresos del canal mayorista: $22.645.544\n* Participación del canal mayorista: 84,62%\n* Ingresos del canal whatsapp: $3.387.798 (13%)\n* Ingresos del canal web: $728.100 (3%)\n\nFuentes: resultados_financieros_2026.md, historial_ventas_2026.md"
+    },
+    {
+      "index": 3,
+      "job_id": "f7408dc39ba04572a019d6b05ebefd95",
+      "status": "DONE",
+      "critical": true,
+      "accepted_ms": 13.2,
+      "total_s": 200.3,
+      "processing_s": 199.3,
+      "flow": [
+        "investigador",
+        "analista",
+        "sintetizador"
+      ],
+      "action_result": {
+        "executed": true,
+        "type": "enviar_informe",
+        "message_id": "22e30b9a14034d6d8ceb839dbe40ca6d",
+        "recipient": "gerencia@genpet.com.ar",
+        "subject": "Informe GenPet: Compará los ingresos reales de Q1, Q2 y Q3 con las metas del plan comercial y ca",
+        "sent_at": "2026-10-08T16:03:18+00:00"
+      },
+      "error": null,
+      "query": "Compará los ingresos reales de Q1, Q2 y Q3 con las metas del plan comercial y calculá el porcentaje de cumplimiento de cada meta. Enviá el informe a gerencia@genpet.com.ar",
+      "final_answer": "Los ingresos reales de Q1, Q2 y Q3 superaron las metas establecidas en el plan comercial, alcanzando un cumplimiento superior al 100% en todos los trimestres.\n\n* **Q1 2026**: Ingresos reales de $4.427.580 frente a una meta de $4.000.000 (Cumplimiento: 110,69%).\n* **Q2 2026**: Ingresos reales de $7.931.680 frente a una meta de $7.500.000 (Cumplimiento: 105,76%).\n* **Q3 2026**: Ingresos reales de $14.402.182 frente a una meta de $12.000.000 (Cumplimiento: 120,02%).\n\nFuentes: historial_ventas_2026.md, plan_comercial_2026.md"
+    },
+    {
+      "index": 4,
+      "job_id": "49c8e25a8f5c4736a164f573aa4e106e",
+      "status": "DONE",
+      "critical": false,
+      "accepted_ms": 13.5,
+      "total_s": 140.89,
+      "processing_s": 140.89,
+      "flow": [
+        "investigador",
+        "analista",
+        "sintetizador"
+      ],
+      "action_result": null,
+      "error": null,
+      "query": "¿Cuál fue la ganancia neta de cada trimestre y cuál fue el margen neto (ganancia neta / ingresos netos) de cada uno?",
+      "final_answer": "La ganancia neta y el margen neto de GenPet en los tres primeros trimestres de 2026 muestran un crecimiento sostenido, sin datos disponibles para el Q4 ya que solo figuran metas comerciales.\n\n- **Q1 2026:** Ganancia neta de $164.025 y margen neto de 3,7%.\n- **Q2 2026:** Ganancia neta de $1.242.479 y margen neto de 15,66%.\n- **Q3 2026:** Ganancia neta de $3.837.051 y margen neto de 26,64%.\n\nFuentes: resultados_financieros_2026.md"
+    },
+    {
+      "index": 5,
+      "job_id": "41ebeb486af347569d10c9e23f7f29cd",
+      "status": "DONE",
+      "critical": true,
+      "accepted_ms": 9.5,
+      "total_s": 204.34,
+      "processing_s": 203.34,
+      "flow": [
+        "investigador",
+        "analista",
+        "sintetizador"
+      ],
+      "action_result": {
+        "executed": true,
+        "type": "enviar_informe",
+        "message_id": "d92579cf279641839075fdc4bc06b33a",
+        "recipient": "direccion@genpet.com.ar",
+        "subject": "Informe GenPet: ¿Cuánto falta facturar en el Q4 para superar el objetivo anual de ingresos? Mand",
+        "sent_at": "2026-10-08T16:03:22+00:00"
+      },
+      "error": null,
+      "query": "¿Cuánto falta facturar en el Q4 para superar el objetivo anual de ingresos? Mandá el resumen a direccion@genpet.com.ar",
+      "final_answer": "Para superar el objetivo anual de ingresos, falta facturar $9.238.558,01 en el Q4.\n\n* **Objetivo anual de ingresos:** superar los $36.000.000\n* **Ingresos reales acumulados (Q1-Q3):** $26.761.442\n* **Falta facturar para superar el objetivo:** $9.238.558,01\n* **Meta de ingresos netos para el Q4:** $13.000.000\n* **Ingresos reales facturados en el Q4:** No encontrados (información faltante).\n\nFuentes: plan_comercial_2026.md, historial_ventas_2026.md, resultados_financieros_2026.md"
+    }
+  ]
+}
