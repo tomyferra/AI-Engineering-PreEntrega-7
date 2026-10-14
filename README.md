@@ -161,7 +161,7 @@ docker compose up -d --build
 
 ```bash
 python scripts/load_test.py              # 5 consultas distintas en paralelo; 2 son críticas y se aprueban
-python scripts/load_test.py --reject     # igual, pero el "humano" rechaza las acciones críticas
+python scripts/load_test.py --reject     # el "humano" rechaza: verifica que no se envíe nada (results/load_test_reject.json)
 python scripts/load_test.py -n 1 --query "¿Cuáles fueron los ingresos netos del Q1?"
 ```
 

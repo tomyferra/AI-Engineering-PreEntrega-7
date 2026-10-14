@@ -6,9 +6,13 @@ Uso (con la API y Redis levantados):
     python scripts/load_test.py -n 1 --query "..." # una sola consulta propia
 
 Cada job se sigue por polling (GET /tasks/{id}); si queda en WAITING_APPROVAL el script actúa como el humano y
-llama a POST /tasks/{id}/approve. Al final imprime la tabla de resultados, la latencia p50/p95 medida del lado
-del cliente y guarda el detalle en results/load_test.json. El costo por ejecución y la latencia p95 de cada traza
-se leen en el dashboard de Phoenix (http://localhost:6006).
+llama a POST /tasks/{id}/approve. Al terminar verifica la acción crítica: aprobada -> `action_result.executed`;
+rechazada -> `approval.approved` en false y sin `action_result` (el job termina DONE, pero no se envía nada). Un job
+cuya acción no coincide con la decisión humana cuenta como falla aunque su estado sea DONE.
+
+Al final imprime la tabla de resultados, la latencia p50/p95 medida del lado del cliente y guarda el detalle en
+results/load_test.json (results/load_test_reject.json con --reject). El costo por ejecución y la latencia p95 de
+cada traza se leen en el dashboard de Phoenix (http://localhost:6006).
 """
 import argparse
 import asyncio
@@ -43,6 +47,21 @@ def percentile(values: List[float], pct: float) -> float:
     return ordered[rank - 1]
 
 
+def check_action(job: dict, critical: bool, approve: bool) -> tuple:
+    """Devuelve (acción, error): qué pasó con la acción crítica y si coincide con la decisión del humano."""
+    executed = bool((job.get("action_result") or {}).get("executed"))
+    if not critical:
+        return "-", "una tarea no crítica ejecutó una acción" if executed else None
+    approval = job.get("approval") or {}
+    if approve:
+        return ("enviado", None) if executed else ("no enviado", "la acción aprobada no se ejecutó")
+    if executed:
+        return "enviado", "la acción rechazada se ejecutó igual"
+    if approval.get("approved") is not False:
+        return "sin decisión", "el job terminó sin registrar el rechazo"
+    return "rechazado", None
+
+
 async def run_job(client: httpx.AsyncClient, index: int, query: str, approve: bool, timeout: float) -> dict:
     start = time.perf_counter()
     created = (await client.post("/tasks", json={"query": query})).raise_for_status().json()
@@ -66,12 +85,15 @@ async def run_job(client: httpx.AsyncClient, index: int, query: str, approve: bo
              ).raise_for_status()
         elif job["status"] in TERMINAL:
             total = time.perf_counter() - start
-            print(f"[{index}] {job['status']} en {total:.1f}s · flujo: {job.get('flow')}")
-            return {"index": index, "job_id": job_id, "status": job["status"], "critical": created["critical"],
-                    "accepted_ms": round(accepted_ms, 1), "total_s": round(total, 2),
-                    "processing_s": round(total - approval_wait, 2), "flow": job.get("flow"),
-                    "action_result": job.get("action_result"), "error": job.get("error"), "query": query,
-                    "final_answer": job.get("final_answer")}
+            action, check_error = check_action(job, created["critical"], approve)
+            ok = job["status"] == "DONE" and check_error is None
+            print(f"[{index}] {job['status']} en {total:.1f}s · acción: {action} · flujo: {job.get('flow')}")
+            return {"index": index, "job_id": job_id, "status": job["status"], "ok": ok,
+                    "critical": created["critical"], "action": action, "accepted_ms": round(accepted_ms, 1),
+                    "total_s": round(total, 2), "processing_s": round(total - approval_wait, 2),
+                    "flow": job.get("flow"), "approval": job.get("approval"),
+                    "action_result": job.get("action_result"), "error": job.get("error") or check_error,
+                    "query": query, "final_answer": job.get("final_answer")}
         await asyncio.sleep(POLL_SECONDS)
 
 
@@ -85,23 +107,26 @@ async def main(args: argparse.Namespace) -> int:
         wall = time.perf_counter() - start
 
     print("\n" + "=" * 100)
-    print(f"{'#':<3}{'estado':<16}{'crítica':<9}{'encolado (ms)':<15}{'total (s)':<11}{'flujo'}")
+    print(f"{'#':<3}{'estado':<16}{'crítica':<9}{'acción':<14}{'encolado (ms)':<15}{'total (s)':<11}{'flujo'}")
     for r in results:
-        print(f"{r['index']:<3}{r['status']:<16}{str(r.get('critical', '-')):<9}{r.get('accepted_ms', '-'):<15}"
-              f"{r.get('total_s', '-'):<11}{' -> '.join(r.get('flow') or [])}")
+        print(f"{r['index']:<3}{r['status']:<16}{str(r.get('critical', '-')):<9}{r.get('action', '-'):<14}"
+              f"{r.get('accepted_ms', '-'):<15}{r.get('total_s', '-'):<11}{' -> '.join(r.get('flow') or [])}")
         if r.get("error"):
             print(f"   error: {r['error'][:200]}")
     finished = [r["processing_s"] for r in results if r["status"] == "DONE"]
     accepted = [r["accepted_ms"] for r in results if "accepted_ms" in r]
-    summary = {"requests": len(results), "done": len(finished),
-               "failed": sum(r["status"] != "DONE" for r in results), "wall_clock_s": round(wall, 2),
-               "post_latency_ms_max": max(accepted) if accepted else None}
+    actions = [r.get("action") for r in results]
+    summary = {"mode": "reject" if args.reject else "approve", "requests": len(results), "done": len(finished),
+               "failed": sum(not r.get("ok") for r in results),
+               "critical": sum(bool(r.get("critical")) for r in results),
+               "sent": actions.count("enviado"), "rejected": actions.count("rechazado"),
+               "wall_clock_s": round(wall, 2), "post_latency_ms_max": max(accepted) if accepted else None}
     if finished:
         summary.update(latency_p50_s=percentile(finished, 50), latency_p95_s=percentile(finished, 95))
     print("=" * 100)
     print(json.dumps(summary, ensure_ascii=False))
 
-    out = Path(args.output)
+    out = Path(args.output or ("results/load_test_reject.json" if args.reject else "results/load_test.json"))
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"summary": summary, "results": results}, ensure_ascii=False, indent=2),
                    encoding="utf-8")
@@ -116,7 +141,8 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--reject", action="store_true", help="Rechazar las acciones críticas en vez de aprobarlas")
     parser.add_argument("--base-url", default="http://localhost:8000")
     parser.add_argument("--timeout", type=float, default=600, help="Timeout por job del lado del cliente (s)")
-    parser.add_argument("--output", default="results/load_test.json")
+    parser.add_argument("--output", help="Archivo de detalle (default: results/load_test.json, "
+                                          "o results/load_test_reject.json con --reject)")
     return parser.parse_args(argv)
 
 
